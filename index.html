@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookBloom | Library Book Recommendation System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/"><span class="brand-mark">✦</span> BookBloom</a>
+  <nav><a class="active" href="/">Home</a><a href="#discover">Discover</a><a href="#top-books">Top rated</a><a href="/about">About project</a></nav>
+  <a class="nav-button" href="#recommend">Get a recommendation ↗</a>
+</header>
+
+<main>
+<section class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow light">YOUR PERSONAL READING COMPANION</div>
+    <h1>Every book opens<br>a <em>new world.</em></h1>
+    <p>Tell us what you love. Explore genres, discover stories and find a book that fits your mood.</p>
+    <form class="searchbar" action="/" method="get">
+      <span>⌕</span>
+      <input name="search" value="{{ search }}" placeholder="Search by book title, author or genre..." aria-label="Search books">
+      <input type="hidden" name="genre" value="{{ selected_genre }}">
+      <button>Search books →</button>
+    </form>
+    <div class="hero-proof"><span>✓</span> Simple · Helpful · Made for readers</div>
+  </div>
+  <div class="hero-visual" aria-hidden="true">
+    <div class="halo"></div><div class="sparkle s1">✦</div><div class="sparkle s2">✧</div>
+    <div class="decor-book book-a"><span>THE<br>MAGIC OF<br>STORIES</span><b>✦</b></div>
+    <div class="decor-book book-b"><span>BEYOND<br>THE<br>HORIZON</span><b>☾</b></div>
+    <div class="decor-book book-c"><span>GROW<br>THROUGH<br>READING</span><b>❋</b></div>
+    <div class="floating-note">A story for every mood ♡</div>
+  </div>
+</section>
+
+<section class="stats">
+  <div><strong>{{ total_books }}</strong><span>Sample books</span></div>
+  <div><strong>{{ genres|length - 1 }}</strong><span>Book categories</span></div>
+  <div><strong>4.8 / 5</strong><span>Highest sample rating</span></div>
+  <div class="stats-note">Discover your next favourite read.</div>
+</section>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}<div class="flash-wrap">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+{% endwith %}
+
+<section class="section" id="discover">
+  <div class="section-heading"><div><span class="eyebrow">EXPLORE YOUR INTERESTS</span><h2>Choose your <em>genre</em></h2></div><p>Start with a category you enjoy.</p></div>
+  <div class="genre-pills">
+    {% for genre in genres %}
+    <a class="genre-pill {% if selected_genre == genre %}selected{% endif %}" href="/?genre={{ genre|urlencode }}"> 
+      {% if genre == "All" %}✧{% elif genre == "Romance" %}♡{% elif genre == "Thriller" %}⚡{% elif genre == "Mystery" %}⌕{% elif genre == "Fantasy" %}✦{% elif genre == "Science" %}◎{% elif genre == "Biography" %}▤{% elif genre == "Self Help" %}☀{% else %}◈{% endif %}
+      {{ genre }}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section book-section">
+  <div class="section-heading">
+    <div><span class="eyebrow">A SMALL LIBRARY OF IDEAS</span><h2>{% if selected_genre != "All" %}{{ selected_genre }}{% else %}Recommended{% endif %} <em>for you</em></h2></div>
+    <form class="sort-control" action="/" method="get">
+      <input type="hidden" name="search" value="{{ search }}"><input type="hidden" name="genre" value="{{ selected_genre }}"><input type="hidden" name="mood" value="{{ selected_mood }}">
+      <label for="sort">Sort:</label><select id="sort" name="sort" onchange="this.form.submit()"><option value="recommended" {% if selected_sort == "recommended" %}selected{% endif %}>Recommended</option><option value="rating" {% if selected_sort == "rating" %}selected{% endif %}>Highest rating</option><option value="title" {% if selected_sort == "title" %}selected{% endif %}>Title A–Z</option></select>
+    </form>
+  </div>
+  {% if books %}
+  <div class="book-grid">
+    {% for book in books %}
+    <article class="book-card">
+      <div class="book-cover cover-{{ loop.index0 % 6 }}">
+        <span class="cover-symbol">{% if book.genre == "Romance" %}♡{% elif book.genre == "Science" %}✧{% elif book.genre == "Fantasy" %}✦{% elif book.genre == "Mystery" %}⌕{% elif book.genre == "Biography" %}❋{% else %}❖{% endif %}</span>
+        <strong>{{ book.title }}</strong><small>{{ book.author }}</small>
+      </div>
+      <div class="book-info">
+        <div class="book-meta"><span class="tag">{{ book.genre }}</span><span class="rating">★ {{ "%.1f"|format(book.rating) }}</span></div>
+        <h3>{{ book.title }}</h3><p class="byline">by {{ book.author }} · {{ book.year }}</p>
+        <p class="description">{{ book.description }}</p>
+        <p class="why"><b>Why read it?</b> {{ book.reason }}</p>
+        <button class="details-button" type="button" data-title="{{ book.title|e }}" data-author="{{ book.author|e }}" data-genre="{{ book.genre|e }}" data-mood="{{ book.mood|e }}" data-rating="{{ book.rating }}" data-year="{{ book.year }}" data-description="{{ book.description|e }}" data-reason="{{ book.reason|e }}" onclick="openBookDetails(this)">Read book details ↗</button>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty"><div>⌕</div><h3>No matching books found</h3><p>Try another title or choose a different genre or mood.</p><a href="/">Reset search</a></div>
+  {% endif %}
+  <div class="showing">Showing {{ books|length }} matching books from {{ total_books }} sample books.</div>
+</section>
+
+<section class="recommend-panel" id="recommend">
+  <div><span class="eyebrow">A SMARTER WAY TO DISCOVER</span><h2>What are you in the <em>mood for?</em></h2><p>Choose a genre and mood. The system will show matching books with higher ratings first.</p></div>
+  <form action="/recommend" method="post" class="recommend-form">
+    <label for="rec-genre">Preferred genre</label><select id="rec-genre" name="genre">{% for genre in genres %}<option value="{{ genre }}">{{ genre }}</option>{% endfor %}</select>
+    <label for="rec-mood">Your reading mood</label><select id="rec-mood" name="mood">{% for mood in moods %}<option value="{{ mood }}">{{ mood }}</option>{% endfor %}</select>
+    <button>Recommend books for me →</button>
+  </form>
+</section>
+
+<section class="section top-section" id="top-books">
+  <div class="section-heading"><div><span class="eyebrow">READER FAVOURITES</span><h2>Top-rated <em>books</em></h2></div><p>Based on the sample ratings in this project.</p></div>
+  <div class="top-grid">{% for book in top_books %}
+    <div class="top-card"><span class="rank">0{{ loop.index }}</span><span class="top-icon">📚</span><div><b>{{ book.title }}</b><small>{{ book.author }} · {{ book.genre }}</small></div><strong>★ {{ "%.1f"|format(book.rating) }}</strong></div>
+  {% endfor %}</div>
+</section>
+
+<section class="feedback-section">
+  <div><span class="eyebrow">HELP US IMPROVE</span><h2>Share your <em>feedback</em></h2><p>Try the feedback form. Your comment is saved in the local SQLite database.</p></div>
+  <form action="/feedback" method="post" class="feedback-form">
+    <input name="student_name" placeholder="Your name" required maxlength="60">
+    <input name="book_title" placeholder="Book you are commenting on" required maxlength="120">
+    <textarea name="comment" placeholder="Write a short comment..." required maxlength="500"></textarea>
+    <button>Submit feedback →</button>
+  </form>
+</section>
+</main>
+
+<footer><a class="brand footer-brand" href="/"><span class="brand-mark">✦</span> BookBloom</a><p>Library Book Recommendation System · Python Flask College PBL Project</p><small>Educational demo: book descriptions and ratings are sample data, not live reviews.</small></footer>
+
+<div class="modal" id="book-modal" aria-hidden="true"><div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <button class="close" onclick="closeBookDetails()" aria-label="Close">×</button><span class="eyebrow">BOOK INFORMATION</span><h2 id="modal-title"></h2><p id="modal-author" class="byline"></p>
+  <div class="modal-tags"><span id="modal-genre"></span><span id="modal-mood"></span><span id="modal-rating"></span><span id="modal-year"></span></div>
+  <p id="modal-description"></p><p class="modal-reason" id="modal-reason"></p><button class="details-button" onclick="closeBookDetails()">Close details</button>
+</div></div>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body></html>
